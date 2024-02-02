@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy Shop Project</title>
+</head>
+<body>
+    <form onsubmit="addCandyList(event)">
+        <label for="candyname">CandyName</label>
+        <input type="text" id="candyname" required/>
+        <label for="description">Description</label>
+        <input type="text" id="description" required/>
+        <label for="price">Price</label>
+        <input type="number" id="price" required/>
+        <label for="quantity">Quantity</label>
+        <input type="number" id="quantity" required/>
+        <button type="submit">Add Item</button>
+    </form>
+    <h3>Candy's List</h3>
+    <ul id="ListOfItems"></ul>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+<script>
+async function addCandyList(event) {
+    try {
+    event.preventDefault();
+    const candy = document.getElementById('candyname').value;
+    const description = document.getElementById('description').value;
+    const price = document.getElementById('price').value;
+    const quantity = document.getElementById('quantity').value;
+ // console.log(items);
+    const items = {
+      candy,
+      description,
+      price,
+      quantity
+    }
+        const response= await axios.post('http://localhost:3000/item/post-item', items)
+        showOnUserScreen(response.data.newItemDetails);
+        console.log(response.data.newItemDetails);
+        console.log(response);
+      }
+      catch (error) {
+        document.body.innerHTML += "<h4>Something Went Wrong</h4>"
+        console.log(error)
+      }
+  }
+   async function getAllItems() {
+    try{
+    const response= await axios.get("http://localhost:3000/item/get-item");
+    console.log(response);
+    for (let i = 0; i < response.data.allItems.length; i++) {
+      showOnUserScreen(response.data.allItems[i])
+    }
+      }
+      catch (error) {
+        document.body.innerHTML += "<h4>Something Went Wrong</h4>"
+        console.log(error)
+      }
+  }
+  window.addEventListener("DOMContentLoaded",getAllItems)
+  
+  function showOnUserScreen(item) {
+    document.getElementById('candyname').value='';
+    document.getElementById('description').value='';
+    document.getElementById('price').value='';
+    document.getElementById('quantity').value='';
+ 
+    const parentNode = document.getElementById('ListOfItems');
+    const childHTML = `<li id=${item.id}>${item.candyName} - ${item.description} - ${item.price} -  <span id="quantity-${item.id}">${item.quantity}</span>
+     <button onclick=buyOne('${item.id}','${item.candyName}','${item.description}','${item.price}')>  BuyOne  </button>
+     <button onclick=buyTwo('${item.id}','${item.candyName}','${item.description}','${item.price}')>  BuyTwo  </button>
+     <button onclick=buyThree('${item.id}','${item.candyName}','${item.description}','${item.price}')>  BuyThree  </button>
+     <button onclick=deleteItem('${item.id}')>Delete</button>
+     <button onclick=editItemDetail('${item.candyName}','${item.description}','${item.price}','${item.quantity}','${item.id}')>Edit</button>
+      </li>`
+    parentNode.innerHTML = parentNode.innerHTML + childHTML;
+  }
+  
+  async function buyOne(itemId, candy, description, price) {
+    try{
+    const quantityElement = document.getElementById(`quantity-${itemId}`);
+  
+      let quantity = parseInt(quantityElement.innerText);
+  
+      if (quantity > 0) {
+          quantity--;
+          quantityElement.innerText = quantity;
+
+  
+       await axios.put(`http://localhost:3000/item/quantity/${itemId}`, {
+        "candy": candy,
+        "description": description,
+        "price": price,
+        "quantity":quantity
+      });
+     } else {
+         console.log("Candy is not available");
+     }  
+     } catch(error) {
+          document.body.innerHTML += "<h4>Something Went Wrong</h4>"
+          console.log(error)
+  }
+}
+  async function buyTwo(itemId, candy, description, price) {
+    try{
+    const quantityElement = document.getElementById(`quantity-${itemId}`);
+  
+    let quantity = parseInt(quantityElement.innerText);
+  
+    if (quantity >=2) {
+        quantity-=2;
+        quantityElement.innerText = quantity;
+
+       await axios.put(`http://localhost:3000/item/quantity/${itemId}`, {
+        "candy": candy,
+        "description": description,
+        "price": price,
+        "quantity": quantity
+      })
+  
+    } else {
+         console.log("Candy is not available");
+     }  
+     } catch(error) {
+          document.body.innerHTML += "<h4>Something Went Wrong</h4>"
+          console.log(error)
+  }
+}
+  async function buyThree(itemId, candy, description, price) {
+    try{
+    const quantityElement = document.getElementById(`quantity-${itemId}`);
+  
+    let quantity = parseInt(quantityElement.innerText);
+  
+    if (quantity >=3) {
+        quantity-=3;
+        quantityElement.innerText = quantity;
+     
+  
+       await axios.put(`http://localhost:3000/item/quantity/${itemId}`, {
+        "candy": candy,
+        "description": description,
+        "price": price,
+        "quantity": quantity
+      })
+    } else {
+         console.log("Candy is not available");
+     }  
+     } catch(error) {
+          document.body.innerHTML += "<h4>Something Went Wrong</h4>"
+          console.log(error)
+  }
+}
+
+async function editItemDetail(candy, desc, price, quan, id) {
+  try{
+    document.getElementById('candyname').value = candy;
+    document.getElementById('description').value = desc;
+    document.getElementById('price').value = price;
+    document.getElementById('quantity').value= quan;
+
+      deleteItem(id);
+  }  catch(err) {
+    document.body.innerHTML = document.body.innerHTML + "<h3>Something Went Wrong</h3>"
+    console.log(err)
+  }
+    }
+
+
+    async function deleteItem(itemId) {
+      try  {
+      await axios.delete(`http://localhost:3000/item/delete-item/${itemId}`)
+          removeItemfromScreen(itemId)
+          console.log('Item details deleted');
+        }catch(err)  {
+          document.body.innerHTML = document.body.innerHTML + "<h3>Something Went Wrong</h3>"
+          console.log(err)
+        }
+
+    }
+
+    function removeItemfromScreen(ItemId) {
+      let parent = document.getElementById('ListOfItems');
+      const childNodeDeleted = document.getElementById(ItemId);
+
+      parent.removeChild(childNodeDeleted)
+    }
+</script>
+</body>
+</html>
+  
